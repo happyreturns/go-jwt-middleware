@@ -231,7 +231,7 @@ func (m *JWTMiddleware) CheckJWT(w http.ResponseWriter, r *http.Request) (req *h
 	// If we get here, everything worked and we can set the
 	// user property in context.
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, m.Options.UserProperty, token)
+	ctx = context.WithValue(ctx, m.Options.UserProperty, parsedToken)
 	req = r.WithContext(ctx)
 	//r.WithContext(context.WithValue(r.Context(), m.Options.UserProperty, parsedToken))
 
