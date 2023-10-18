@@ -136,8 +136,7 @@ func FromAuthHeader(r *http.Request) (string, error) {
 	return authHeaderParts[1], nil
 }
 
-// FromCookie is a "TokenExtractor" that takes a give request and extracts
-// the JWT token from the cookie.
+// FromCookie returns a function that extracts the token from the specified cookie
 func FromCookie(cookieName string) TokenExtractor {
 	return func(r *http.Request) (string, error) {
 		cookie, err := r.Cookie(cookieName)
