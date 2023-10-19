@@ -136,6 +136,19 @@ func FromAuthHeader(r *http.Request) (string, error) {
 	return authHeaderParts[1], nil
 }
 
+// FromCookie returns a function that extracts the token from the specified cookie
+func FromCookie(cookieName string) TokenExtractor {
+	return func(r *http.Request) (string, error) {
+		cookie, err := r.Cookie(cookieName)
+		if err != nil {
+			return "", nil // No error, just no token
+		}
+
+		token := cookie.Value
+		return token, nil
+	}
+}
+
 // FromParameter returns a function that extracts the token from the specified
 // query string parameter
 func FromParameter(param string) TokenExtractor {
