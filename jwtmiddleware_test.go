@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/codegangsta/negroni"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
