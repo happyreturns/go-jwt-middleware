@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-martini/martini"
+	"github.com/golang-jwt/jwt/v4"
 	jwtmiddleware "github.com/happyreturns/go-jwt-middleware"
 )
 

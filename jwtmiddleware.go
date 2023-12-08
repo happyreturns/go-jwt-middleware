@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // A function called whenever an error is encountered
