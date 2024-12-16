@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/sirupsen/logrus"
 )
 
 // A function called whenever an error is encountered
@@ -43,10 +43,12 @@ type Options struct {
 	// Debug flag turns on debugging output
 	// Default: false
 	Debug bool
+	// Logger instance of logger to use, if not set then no logs will be written
+	Logger logrus.FieldLogger
 	// When set, all requests with the OPTIONS method will use authentication
 	// Default: false
 	EnableAuthOnOptions bool
-	// When set, the middelware verifies that tokens are signed with the specific signing algorithm
+	// When set, the middleware verifies that tokens are signed with the specific signing algorithm
 	// If the signing method is not constant the ValidationKeyGetter callback can be used to implement additional checks
 	// Important to avoid security issues described here: https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 	// Default: nil
@@ -89,12 +91,12 @@ func New(options ...Options) *JWTMiddleware {
 }
 
 func (m *JWTMiddleware) logf(format string, args ...interface{}) {
-	if m.Options.Debug {
-		log.Printf(format, args...)
+	if m.Options.Debug && m.Options.Logger != nil {
+		m.Options.Logger.Debugf(format, args...)
 	}
 }
 
-// Special implementation for Negroni, but could be used elsewhere.
+// HandlerWithNext special implementation for Negroni, but could be used elsewhere.
 func (m *JWTMiddleware) HandlerWithNext(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	req, err := m.CheckJWT(w, r)
 
@@ -187,8 +189,6 @@ func (m *JWTMiddleware) CheckJWT(w http.ResponseWriter, r *http.Request) (req *h
 	// If debugging is turned on, log the outcome
 	if err != nil {
 		m.logf("Error extracting JWT: %v", err)
-	} else {
-		m.logf("Token extracted: %s", token)
 	}
 
 	// If an error occurs, call the error handler and return an error
@@ -201,7 +201,7 @@ func (m *JWTMiddleware) CheckJWT(w http.ResponseWriter, r *http.Request) (req *h
 	if token == "" {
 		// Check if it was required
 		if m.Options.CredentialsOptional {
-			m.logf("  No credentials found (CredentialsOptional=true)")
+			m.logf("No credentials found (CredentialsOptional=true)")
 			// No error, just no token (and that is ok given that CredentialsOptional is true)
 			return r, nil
 		}
@@ -209,7 +209,7 @@ func (m *JWTMiddleware) CheckJWT(w http.ResponseWriter, r *http.Request) (req *h
 		// If we get here, the required token is missing
 		errorMsg := "Required authorization token not found"
 		m.Options.ErrorHandler(w, r, errorMsg)
-		m.logf("  Error: No credentials found (CredentialsOptional=false)")
+		m.logf("Error: No credentials found (CredentialsOptional=false)")
 		return r, fmt.Errorf(errorMsg)
 	}
 
@@ -239,14 +239,11 @@ func (m *JWTMiddleware) CheckJWT(w http.ResponseWriter, r *http.Request) (req *h
 		return r, errors.New("Token is invalid")
 	}
 
-	m.logf("JWT: %v", parsedToken)
-
 	// If we get here, everything worked and we can set the
 	// user property in context.
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, m.Options.UserProperty, parsedToken)
 	req = r.WithContext(ctx)
-	//r.WithContext(context.WithValue(r.Context(), m.Options.UserProperty, parsedToken))
 
 	return req, nil
 }
